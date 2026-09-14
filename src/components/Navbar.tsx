@@ -26,16 +26,16 @@ export default function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-colors duration-300 ${
+      className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-cream-50/90 backdrop-blur border-b border-line"
-          : "bg-transparent border-b border-transparent"
+          ? "border-b border-line bg-cream-50/90 shadow-sm backdrop-blur"
+          : "border-b border-transparent bg-transparent"
       }`}
     >
       <nav className="container-px flex items-center justify-between h-20">
         <NavLink
           to="/"
-          className="flex items-center gap-2 shrink-0"
+          className="flex items-center gap-2 shrink-0 transition-transform hover:scale-[1.02]"
           onClick={() => setOpen(false)}
         >
           <img src={logo} alt="Depay" className="h-9 w-auto object-contain" />
@@ -47,7 +47,7 @@ export default function Navbar() {
               <NavLink
                 to={l.to}
                 className={({ isActive }) =>
-                  `relative py-2 transition-colors hover:text-forest-800 ${
+                  `group relative py-2 transition-colors hover:text-forest-800 ${
                     isActive ? "text-forest-900" : "text-ink-700"
                   }`
                 }
@@ -55,9 +55,11 @@ export default function Navbar() {
                 {({ isActive }) => (
                   <>
                     {l.label}
-                    {isActive && (
-                      <span className="absolute -bottom-0.5 left-0 right-0 h-[2px] bg-leaf-500 rounded-full" />
-                    )}
+                    <span
+                      className={`absolute -bottom-0.5 left-0 h-[2px] rounded-full bg-leaf-500 transition-all duration-300 ${
+                        isActive ? "right-0" : "right-full group-hover:right-0"
+                      }`}
+                    />
                   </>
                 )}
               </NavLink>
@@ -67,7 +69,10 @@ export default function Navbar() {
 
         <div className="hidden lg:flex items-center gap-3">
           {isAuthenticated ? (
-            <NavLink to="/dashboard" className="btn-accent btn-sm">
+            <NavLink
+              to="/dashboard"
+              className="btn-accent btn-sm transition-shadow hover:shadow-lg hover:shadow-leaf-500/25"
+            >
               Go to dashboard
               <ArrowUpRight className="h-4 w-4" />
             </NavLink>
@@ -76,7 +81,10 @@ export default function Navbar() {
               <NavLink to="/login" className="btn-ghost btn-sm">
                 Log in
               </NavLink>
-              <NavLink to="/register" className="btn-accent btn-sm">
+              <NavLink
+                to="/register"
+                className="btn-accent btn-sm transition-shadow hover:shadow-lg hover:shadow-leaf-500/25"
+              >
                 Get started
                 <ArrowUpRight className="h-4 w-4" />
               </NavLink>
@@ -86,7 +94,7 @@ export default function Navbar() {
 
         <button
           aria-label="Toggle menu"
-          className="lg:hidden p-2 -mr-2 text-forest-900"
+          className="lg:hidden p-2 -mr-2 rounded-lg text-forest-900 transition-colors hover:bg-forest-900/5"
           onClick={() => setOpen((v) => !v)}
         >
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -94,7 +102,7 @@ export default function Navbar() {
       </nav>
 
       {open && (
-        <div className="lg:hidden border-t border-line bg-cream-50">
+        <div className="lg:hidden border-t border-line bg-cream-50 shadow-sm">
           <ul className="container-px flex flex-col py-4 gap-1 font-body text-base">
             {links.map((l) => (
               <li key={l.to}>
@@ -116,15 +124,27 @@ export default function Navbar() {
           </ul>
           <div className="container-px flex gap-3 pb-6 pt-1">
             {isAuthenticated ? (
-              <NavLink to="/dashboard" onClick={() => setOpen(false)} className="btn-accent btn-sm flex-1">
+              <NavLink
+                to="/dashboard"
+                onClick={() => setOpen(false)}
+                className="btn-accent btn-sm flex-1"
+              >
                 Go to dashboard
               </NavLink>
             ) : (
               <>
-                <NavLink to="/login" onClick={() => setOpen(false)} className="btn-ghost btn-sm flex-1">
+                <NavLink
+                  to="/login"
+                  onClick={() => setOpen(false)}
+                  className="btn-ghost btn-sm flex-1"
+                >
                   Log in
                 </NavLink>
-                <NavLink to="/register" onClick={() => setOpen(false)} className="btn-accent btn-sm flex-1">
+                <NavLink
+                  to="/register"
+                  onClick={() => setOpen(false)}
+                  className="btn-accent btn-sm flex-1"
+                >
                   Create account
                 </NavLink>
               </>
