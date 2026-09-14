@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-cream-50 text-ink-900 font-body antialiased;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+  ::selection {
+    @apply bg-leaf-300 text-forest-950;
+  }
+  :focus-visible {
+    outline: 2px solid theme('colors.leaf.500');
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Signature element: the receipt stub — a card with punch-hole notches
+     and a dashed perforation, echoing a payment receipt / ticket stub. */
+  .stub {
+    position: relative;
+    isolation: isolate;
+  }
+  .stub::before,
+  .stub::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: var(--stub-bg, theme('colors.cream.50'));
+    transform: translateY(-50%);
+    z-index: 1;
+  }
+  .stub::before { left: -9px; }
+  .stub::after { right: -9px; }
+
+  .stub-onwhite {
+    --stub-bg: #ffffff;
+  }
+  .stub-oncream {
+    --stub-bg: theme('colors.cream.50');
+  }
+  .stub-onforest {
+    --stub-bg: theme('colors.forest.900');
+  }
+
+  .perf {
+    background-image: repeating-linear-gradient(
+      to right,
+      theme('colors.line') 0,
+      theme('colors.line') 6px,
+      transparent 6px,
+      transparent 13px
+    );
+    height: 1px;
+  }
+
+  .container-px {
+    @apply px-6 sm:px-8 lg:px-14;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-body font-semibold transition-all duration-200 ease-out disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-primary {
+    @apply btn bg-forest-800 text-cream-50 px-6 py-3.5 hover:bg-forest-700 hover:-translate-y-0.5 shadow-pop;
+  }
+  .btn-accent {
+    @apply btn bg-amber-500 text-forest-950 px-6 py-3.5 hover:bg-amber-400 hover:-translate-y-0.5;
+  }
+  .btn-ghost {
+    @apply btn border border-forest-800/20 text-forest-900 px-6 py-3.5 hover:border-forest-800/50 hover:bg-forest-900/[0.03];
+  }
+  .btn-sm {
+    @apply px-4 py-2 text-sm;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.18em] text-leaf-600;
+  }
+
+  .card {
+    @apply bg-white border border-line rounded-2xl shadow-card;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-line bg-cream-50 px-4 py-3 text-sm text-ink-900 placeholder:text-ink-500/60 outline-none transition-colors focus:border-leaf-500;
+  }
+}
+
+@layer utilities {
+  .bg-noise {
+    background-image: theme('backgroundImage.grain');
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+}
