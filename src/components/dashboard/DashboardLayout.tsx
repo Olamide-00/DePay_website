@@ -84,7 +84,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               onClick={() => setShowBalance((v) => !v)}
               className="hidden items-center gap-2.5 rounded-full border border-line bg-white px-4 py-2 shadow-sm transition-shadow hover:shadow-md sm:flex"
             >
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-leaf-500/15 text-leaf-500">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-leaf-500/25 to-leaf-500/5 text-leaf-500">
                 <Wallet className="h-3.5 w-3.5" />
               </span>
               <span className="flex flex-col leading-tight text-left">

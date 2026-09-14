@@ -71,7 +71,7 @@ export default function Navbar() {
           {isAuthenticated ? (
             <NavLink
               to="/dashboard"
-              className="btn-accent btn-sm transition-shadow hover:shadow-lg hover:shadow-leaf-500/25"
+              className="btn-accent btn-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-leaf-500/25"
             >
               Go to dashboard
               <ArrowUpRight className="h-4 w-4" />
@@ -83,7 +83,7 @@ export default function Navbar() {
               </NavLink>
               <NavLink
                 to="/register"
-                className="btn-accent btn-sm transition-shadow hover:shadow-lg hover:shadow-leaf-500/25"
+                className="btn-accent btn-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-leaf-500/25"
               >
                 Get started
                 <ArrowUpRight className="h-4 w-4" />
