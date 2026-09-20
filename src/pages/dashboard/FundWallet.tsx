@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
-import { Landmark, Copy, Check, PartyPopper, AlertCircle } from "lucide-react";
+import {
+  Landmark,
+  Copy,
+  Check,
+  PartyPopper,
+  ShieldCheck,
+  BadgeCheck,
+  Lock,
+  HelpCircle,
+} from "lucide-react";
 import PageHeader from "../../components/dashboard/PageHeader";
 import { useAuth } from "../../context/AuthContext";
-import { useReservedAccount } from "../../hooks/useWallet";
+import { useCreateWallet } from "../../hooks/useWallet";
 import { getSocket } from "../../lib/socket";
 import { formatNaira } from "../../lib/utils";
 
@@ -12,30 +21,36 @@ const STEPS = [
   "No need to refresh — you'll see it land right here.",
 ];
 
+const BADGES = [
+  { icon: ShieldCheck, label: "Encrypted" },
+  { icon: BadgeCheck, label: "CBN Compliant" },
+  { icon: Lock, label: "Protected" },
+];
+
+function splitFullName(name: string) {
+  if (!name) return { first_name: "", last_name: "" };
+  const parts = name.trim().split(" ");
+  return {
+    first_name: parts[0] || "",
+    last_name: parts.slice(1).join(" ") || parts[0] || "",
+  };
+}
+
 export default function FundWallet() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [copied, setCopied] = useState(false);
   const [justFunded, setJustFunded] = useState<number | null>(null);
 
-  const {
-    data: account,
-    isLoading,
-    isError,
-    refetch,
-  } = useReservedAccount(
-    user
-      ? {
-          email: user.email,
-          phone: user.phoneNumber,
-          first_name: user.name.split(" ")[0] || user.name,
-          last_name: user.name.split(" ").slice(1).join(" ") || user.name,
-        }
-      : null,
-  );
+  const [bvn, setBvn] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber ?? "");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  // Live "money just landed" moment — the backend's webhook pushes
-  // this the instant a transfer to the dedicated account clears, so
-  // there's nothing to poll or a "confirm" button to fake.
+  const { mutate: createWallet, isPending } = useCreateWallet();
+
+  useEffect(() => {
+    if (user?.phoneNumber) setPhoneNumber(user.phoneNumber);
+  }, [user?.phoneNumber]);
+
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
@@ -47,13 +62,56 @@ export default function FundWallet() {
     };
   }, []);
 
-  const copy = (value: string) => {
+  const copy = (value: string, label: string) => {
     navigator.clipboard?.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
+    void label;
   };
 
   if (!user) return null;
+
+  // Same source of truth the mobile app uses — whether a dedicated
+  // account exists is read straight off the already-loaded profile,
+  // never re-derived by calling create-account speculatively.
+  const hasAccount = user.isWalletCreated && !!user.accountNumber;
+
+  const isFormValid =
+    agreedToTerms &&
+    bvn.length === 11 &&
+    phoneNumber.length >= 10 &&
+    !isPending;
+
+  const handleGenerateWallet = () => {
+    if (!isFormValid) return;
+
+    const { first_name, last_name } = splitFullName(user.name);
+
+    createWallet(
+      { email: user.email, first_name, last_name, phone: phoneNumber, bvn },
+      {
+        onSuccess: (account) => {
+          setUser({
+            ...user,
+            isWalletCreated: true,
+            accountNumber: account.accountNumber,
+            bankName: account.bankName,
+            accountDetails: [
+              {
+                accountName: account.accountName || user.name,
+                accountNumber: account.accountNumber,
+                bankName: account.bankName,
+                bankCode: "",
+                isDefault: true,
+              },
+            ],
+          });
+          setBvn("");
+          setAgreedToTerms(false);
+        },
+      },
+    );
+  };
 
   if (justFunded !== null) {
     return (
@@ -91,33 +149,15 @@ export default function FundWallet() {
       <PageHeader
         icon={Landmark}
         title="Fund wallet"
-        subtitle="Transfer to your dedicated account — credited automatically."
+        subtitle={
+          hasAccount
+            ? "Transfer to your dedicated account — credited automatically."
+            : "Get a dedicated Nigerian bank account to fund your wallet."
+        }
       />
 
       <div className="card p-6 sm:p-7">
-        {isLoading ? (
-          <div className="space-y-3">
-            <div className="h-40 animate-pulse rounded-2xl bg-cream-100" />
-            <div className="h-4 w-3/4 animate-pulse rounded bg-cream-100" />
-            <div className="h-4 w-full animate-pulse rounded bg-cream-100" />
-            <div className="h-4 w-2/3 animate-pulse rounded bg-cream-100" />
-          </div>
-        ) : isError || !account ? (
-          <div className="py-8 text-center">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-red-50 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-            </div>
-            <p className="mt-3 text-sm font-semibold text-ink-900">
-              Couldn't load your account
-            </p>
-            <p className="mt-1 text-sm text-ink-600">
-              Check your connection and try again.
-            </p>
-            <button onClick={() => refetch()} className="btn-ghost btn-sm mt-4">
-              Try again
-            </button>
-          </div>
-        ) : (
+        {hasAccount ? (
           <>
             <div className="stub stub-onforest relative overflow-hidden rounded-2xl bg-forest-950 px-6 py-7 text-cream-50">
               <div
@@ -128,12 +168,14 @@ export default function FundWallet() {
                 Your dedicated account
               </p>
               <p className="relative mt-3 font-mono text-3xl font-semibold tracking-wide">
-                {account.accountNumber}
+                {user.accountNumber}
               </p>
               <div className="relative mt-3 flex items-center justify-between text-sm">
-                <span className="text-cream-50/80">{account.bankName}</span>
+                <span className="text-cream-50/80">{user.bankName}</span>
                 <button
-                  onClick={() => copy(account.accountNumber)}
+                  onClick={() =>
+                    copy(user.accountNumber as string, "Account number")
+                  }
                   className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/15"
                 >
                   {copied ? (
@@ -145,7 +187,7 @@ export default function FundWallet() {
                 </button>
               </div>
               <p className="relative mt-2 text-xs text-cream-50/70">
-                {account.accountName}
+                {user.accountDetails?.[0]?.accountName || user.name}
               </p>
             </div>
 
@@ -172,6 +214,80 @@ export default function FundWallet() {
               This account is uniquely yours — reuse it any time you want to
               fund your wallet.
             </p>
+          </>
+        ) : (
+          <>
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-medium text-ink-700">
+                  Bank Verification Number (BVN)
+                </span>
+                <input
+                  value={bvn}
+                  onChange={(e) =>
+                    setBvn(e.target.value.replace(/\D/g, "").slice(0, 11))
+                  }
+                  inputMode="numeric"
+                  placeholder="Enter your 11-digit BVN"
+                  className="input"
+                />
+                <span className="mt-1.5 flex items-center gap-1 text-xs text-ink-500">
+                  <HelpCircle className="h-3 w-3" />
+                  Dial *565*0# on your registered number to get your BVN
+                </span>
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-medium text-ink-700">
+                  Phone number
+                </span>
+                <input
+                  value={phoneNumber}
+                  onChange={(e) =>
+                    setPhoneNumber(
+                      e.target.value.replace(/\D/g, "").slice(0, 11),
+                    )
+                  }
+                  inputMode="tel"
+                  placeholder="e.g. 09036018013"
+                  className="input"
+                />
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-line text-forest-800 focus:ring-forest-800"
+                />
+                <span className="text-xs leading-relaxed text-ink-600">
+                  I consent to the collection of my BVN, phone number, and
+                  personal details in line with CBN requirements. Depay will
+                  never share or sell my information.
+                </span>
+              </label>
+
+              <div className="flex justify-center gap-2">
+                {BADGES.map((b) => (
+                  <span
+                    key={b.label}
+                    className="inline-flex items-center gap-1 rounded-full border border-forest-900/10 bg-forest-900/5 px-2.5 py-1 text-[11px] font-medium text-forest-800"
+                  >
+                    <b.icon className="h-3 w-3" />
+                    {b.label}
+                  </span>
+                ))}
+              </div>
+
+              <button
+                onClick={handleGenerateWallet}
+                disabled={!isFormValid}
+                className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isPending ? "Creating your account…" : "Generate bank account"}
+              </button>
+            </div>
           </>
         )}
       </div>
